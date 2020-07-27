@@ -15,7 +15,7 @@ int sys_ni_syscall_index = 0; // Index of sys_ni_syscall inside the table
 
 // The system call we'll replace sys_ni_syscall with. 
 __SYSCALL_DEFINEx(2, _catnap_backoff, int*, lock, int, thread_id) {
-    printk(KERN_ALERT "Thread id: %d	Lock value: %d\n", thread_id, *lock);
+	printk(KERN_ALERT "Thread id: %d	Lock value: %d\n", thread_id, *lock);
 	printk(KERN_ALERT "Thread id: %d	Entering catnap loop!\n", thread_id);
 	
 	while (1) {
@@ -62,19 +62,19 @@ unsigned long sys_catnap_backoff_ptr  = (unsigned long) __x64_sys_catnap_backoff
 
 // For some reason 'write_cr0 (read_cr0 () & (~ 0x10000))' didn't work, so I had to  copy this function that manually sets the 16th bit (write control) to 1
 inline void mywrite_cr0(unsigned long cr0) {
-  asm volatile("mov %0,%%cr0" : "+r"(cr0), "+m"(__force_order));
+	asm volatile("mov %0,%%cr0" : "+r"(cr0), "+m"(__force_order));
 }
 
 void enable_write_protection(void) {
-  unsigned long cr0 = read_cr0();
-  set_bit(16, &cr0);
-  mywrite_cr0(cr0);
+	unsigned long cr0 = read_cr0();
+	set_bit(16, &cr0);
+	mywrite_cr0(cr0);
 }
 
 void disable_write_protection(void) {
-  unsigned long cr0 = read_cr0();
-  clear_bit(16, &cr0);
-  mywrite_cr0(cr0);
+	unsigned long cr0 = read_cr0();
+	clear_bit(16, &cr0);
+	mywrite_cr0(cr0);
 }
 
 // Replace the system call sys_ni_syscall 
