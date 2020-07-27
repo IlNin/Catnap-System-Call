@@ -1,0 +1,9 @@
+COMMANDS
+lsmod // Show the list of all modules loaded in the kernel
+insmod INSERT_DIRECTORY/INSERT_FILE.ko // Load a module in the kernel
+modprobe INSERT_MODULE_NAME // Loads a module in the kernel even without specifying the location
+rmmod INSERT_MODULE_NAME // Removes a module from the kernel
+cat /var/log/syslog // Shows logs from the kernel (printk writes HERE!)
+strace ./INSERT_PROGRAM_NAME // Shows all system calls made by the program
+sudo cat /proc/kallsyms | grep sys_ni_syscall // Shows the addresses of sys_ni_sysncall
+sudo cat /proc/kallsyms | grep sys_call_table // Show the address of the system call table
