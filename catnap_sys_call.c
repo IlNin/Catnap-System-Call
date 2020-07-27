@@ -9,37 +9,36 @@
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Luca");
 
-unsigned long sys_call_table_address = 0xffffffffa70013c0;  // The addess of the system call table. THIS ADDRESS CHANGES AT EACH BOOT OF THE OS.
-unsigned long sys_ni_syscall_address = 0xffffffffa6003820; // The address of sys_ni_syscall (x64). THIS ADDRESS CHANGES AT EACH BOOT OF THE OS.
+unsigned long sys_call_table_address = 0xffffffff8b2002a0;  // The addess of the system call table. THIS ADDRESS CHANGES AT EACH BOOT OF THE OS.
+unsigned long sys_ni_syscall_address = 0xffffffff8a2c1e60; // The address of sys_ni_syscall (x64). THIS ADDRESS CHANGES AT EACH BOOT OF THE OS.
 int sys_ni_syscall_index = 0; // Index of sys_ni_syscall inside the table
 
-
-int max_loops = 100;
-int current_loop = 0;
-
 // The system call we'll replace sys_ni_syscall with. 
-__SYSCALL_DEFINEx(1, _catnap_backoff, int, lock) {
-    printk(KERN_ALERT "Lock value: %u\n", lock);
-	printk(KERN_ALERT "Entering catnap loop!\n");
+__SYSCALL_DEFINEx(2, _catnap_backoff, int*, lock, int, thread_id) {
+    printk(KERN_ALERT "Thread id: %d	Lock value: %d\n", thread_id, *lock);
+	printk(KERN_ALERT "Thread id: %d	Entering catnap loop!\n", thread_id);
 	
 	while (1) {
-		unsigned int * monitor_target = &lock; // Takes the address to monitor
-		__monitor(monitor_target, 0, 0); // mwait knows when there's a write to that address thanks to monitor
-		if (*monitor_target) { // Checks if the lock is enabled: if so, it exits from the loop
+		__monitor(lock, 0, 0); // mwait knows when there's a write to that address thanks to monitor
+		
+		if (*lock) { // Checks if the lock is enabled: if so, it exits from the loop
+			printk(KERN_ALERT "Thread id: %d	The lock is already 1!\n", thread_id);
 			break; 
 		}
+		
 		else { // Else it goes in the mwait phase until it is woken up
-			printk(KERN_ALERT "Entering in mwait state!\n");
+			printk(KERN_ALERT "Thread id: %d	Entering in mwait state!\n", thread_id);
 			__mwait(0, 0); 
-			printk(KERN_ALERT "Exiting mwait state!\n");
+			printk(KERN_ALERT "Thread id: %d	Exiting mwait state!\n", thread_id);
 		}
-		current_loop += 1;
-		if (*monitor_target || current_loop == max_loops) { // We check if the node has woken up for the right reasons (something changed in the lock. If not, the loop is restarted again
+		
+		if (*lock) { // We check if the node has woken up for the right reasons: something has changed in the lock. If not, the loop is restarted again.
+			printk(KERN_ALERT "Thread id: %d	The lock has now changed to %d!", thread_id, *lock);
 			break;
 		}
 	}
-	printk(KERN_ALERT "Exiting catnap loop!\n");
-	current_loop = 0;
+	
+	printk(KERN_ALERT "Thread id: %d	Exiting catnap loop!\n", thread_id);
 	return 0;
 	
 	/* 1: while True do
