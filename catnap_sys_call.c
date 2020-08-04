@@ -4,44 +4,95 @@
 #include <linux/moduleparam.h> // Needed in order to pass arguments as a user
 #include <linux/unistd.h> // Needed in order to list all system calls
 #include <linux/syscalls.h>
-// #include <pmmintrin.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Luca");
 
-unsigned long sys_call_table_address = 0xffffffff9a2002a0;  // The addess of the system call table. THIS ADDRESS CHANGES AT EACH BOOT OF THE OS.
-unsigned long sys_ni_syscall_address = 0xffffffff992c1e60; // The address of sys_ni_syscall (x64). THIS ADDRESS CHANGES AT EACH BOOT OF THE OS.
+#define TARGET_C1_STATE 0
+#define TARGET_C2_STATE 0x00000010
+#define TARGET_C3_STATE 0x00000020
+#define TARGET_C4_STATE 0x00000030
+
+#define DISABLE_INTERRUPTS_AS_BREAKS 0
+#define ALLOW_INTERRUPTS_AS_BREAKS 0x1
+
+char *hintMSG[4] = {"C1", "C2", "C3", "C4"}; // Strings that are printed during the printk
+char *wakeupMSG[2] = {"Disabled", "Enabled"}; // Idem
+
+unsigned long sys_call_table_address = 0xffffffffae6002a0;  // The addess of the system call table. THIS ADDRESS CHANGES AT EACH BOOT OF THE OS.
+unsigned long sys_ni_syscall_address = 0xffffffffad6c1e60; // The address of sys_ni_syscall (x64). THIS ADDRESS CHANGES AT EACH BOOT OF THE OS.
 int sys_ni_syscall_index = 0; // Index of sys_ni_syscall inside the table
 
 // The system call we'll replace sys_ni_syscall with. 
-__SYSCALL_DEFINEx(2, _catnap_backoff, int*, lock, int, thread_id) {
-    printk(KERN_ALERT "Thread id: %d	Lock value: %d\n", thread_id, *lock);
-    printk(KERN_ALERT "Thread id: %d	Entering catnap loop!\n", thread_id);
+__SYSCALL_DEFINEx(4, _catnap_backoff, int*, lock, unsigned long, hint, unsigned long, wakeup_mode, int, thread_id) {
+    int loop_number = 1; // It counts how many time a thread enters in the MWAIT cycle.
+    
+    // Initialize parameters for MWAIT
+    unsigned long HINT;
+    unsigned long WAKEUP_MODE;
+
+    if (hint == 1) {    // Note: All states described belowed are supposed to be general: there could be differences across different processors!
+        HINT = TARGET_C2_STATE; // C2: Stop Clock. Stops CPU internal and external clocks via hardware.
+    }
+    else if (hint == 2) {
+        HINT = TARGET_C3_STATE; // C3: Sleep. Stops all CPU internal clocks.
+    }
+    else if (hint == 3) {
+        HINT = TARGET_C4_STATE; // C4: Deeper Sleep. Reduces CPU voltage.
+    }
+    else {
+        HINT = TARGET_C1_STATE; // C1:  Halt. Stops CPU main internal clocks via software; bus interface unit and APIC are kept running at full speed.
+        hint = 0;
+    }
+    
+    if (wakeup_mode == 1) { // Treat interrupts as break events even if masked.
+        WAKEUP_MODE = ALLOW_INTERRUPTS_AS_BREAKS;
+    }
+    else { 
+        WAKEUP_MODE = DISABLE_INTERRUPTS_AS_BREAKS;
+        wakeup_mode = 0;
+    }
+    
+    printk(KERN_ALERT "Thread id: %d    Lock value: %d\n", thread_id, *lock);
+    printk(KERN_ALERT "Thread id: %d    Entering catnap loop!\n", thread_id);
+    printk(KERN_ALERT "Thread id: %d    C-State Targetted: %s   Interrupts as breaks: %s\n", thread_id, hintMSG[hint], wakeupMSG[wakeup_mode]);
 	
     while (1) {
         __monitor(lock, 0, 0); // mwait knows when there's a write to that address thanks to monitor
 		
         if (*lock) { // Checks if the lock is enabled: if so, it exits from the loop
-            printk(KERN_ALERT "Thread id: %d	The lock is already 1!\n", thread_id);
+            printk(KERN_ALERT "Thread id: %d    The lock is already 1!\n", thread_id);
             break; 
         }
 		
         else { // Else it goes in the mwait phase until it is woken up
-            printk(KERN_ALERT "Thread id: %d	Entering in mwait state!\n", thread_id);
-            __mwait(0, 0); 
-            printk(KERN_ALERT "Thread id: %d	Exiting mwait state!\n", thread_id);
+            printk(KERN_ALERT "Thread id: %d    Entering in mwait state!\n", thread_id);
+            __mwait(HINT, WAKEUP_MODE); 
+            printk(KERN_ALERT "Thread id: %d    Exiting mwait state!\n", thread_id);
         }
-		
+
         if (*lock) { // We check if the node has woken up for the right reasons: something has changed in the lock. If not, the loop is restarted again.
-            printk(KERN_ALERT "Thread id: %d	The lock has now changed to %d!", thread_id, *lock);
+            printk(KERN_ALERT "Thread id: %d    The lock has now changed to %d!", thread_id, *lock);
+            break;
+        }
+        
+        else {
+            printk(KERN_ALERT "Thread id: %d    Looks like I woke up needlessly for the %d time!", thread_id, loop_number);
+            loop_number += 1;
+        }
+        
+        // DEBUG
+        if (loop_number >= 100) {
+            printk(KERN_ALERT "Thread id: %d    I have to break the loop or else I'll cycle in eternity", thread_id);
             break;
         }
     }
-	
-    printk(KERN_ALERT "Thread id: %d	Exiting catnap loop!\n", thread_id);
+    
+    printk(KERN_ALERT "Thread id: %d    Exiting catnap loop!\n", thread_id);
     return 0;
 	
-    /* 1: while True do
+    /*  Original catnap pseudocode:
+        1: while True do
             2: monitor_target ←address_of (locked)
             3: M ON IT OR (monitor_target)
             4: if Locked then

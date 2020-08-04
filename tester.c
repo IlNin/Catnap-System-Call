@@ -4,14 +4,14 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
-#define nThreads 4
+#define nThreads 6
 
 static int locks[nThreads];
 
 void *call_system_call(void * p_index) {
     int i = *((int *) p_index);
     printf("I'm process ID: %d and I'm invoking the catnap system call!\n", i);
-    syscall(134, &locks[i], i); // sys_ni_syscall has index 134
+    syscall(134, &locks[i], 1, 0, i); // sys_ni_syscall has index 134
     locks[i+1] = 1; 
     printf("I'm process ID: %d and it looks like everything worked out ok!\n", i);
 }
