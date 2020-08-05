@@ -1,5 +1,6 @@
 # Catnap-System-Call
-A Linux kernel module that defines a new system call that implements a back-off policy called 'catnap'.
+A Linux kernel module that defines a new system call that implements a back-off policy called 'catnap'.<br/>
+Link to the original paper: https://ieeexplore.ieee.org/document/8978918
 
 
 <b>Description:</b><br/>
@@ -18,6 +19,3 @@ Work-in-progress.
 2 - Make the Makefile.<br/>
 3 - Insert the module into the kernel by typing 'sudo insmod ./catnap_sys_call.ko'. You can also remove it by typing 'sudo rmmod catnap_sys_call'.<br/>
 4 - Compile and execute the tester and see if the module works correctly!<br/>
-
-
-Link to the original paper: https://ieeexplore.ieee.org/document/8978918
