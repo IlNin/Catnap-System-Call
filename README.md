@@ -14,10 +14,10 @@ Work-in-progress.
 
 
 <b>Install Instructions:</b><br/>
-1 - Make sure that the addresses for the sys_call_table and sys_ni_syscall are correct in catnap_sys_call.c, since they change every time you boot the system. Type 'sudo cat /proc/kallsyms | grep sys_ni_syscall' and 'sudo cat /proc/kallsyms | grep sys_call_table' to get their current value.
-2 - Make the Makefile.
-3 - Insert the module into the kernel by typing 'sudo insmod ./catnap_sys_call.ko'. You can also remove it by typing 'sudo rmmod catnap_sys_call'.
-4 - Execute this test and see if the module works correctly!
+1 - Make sure that the addresses for the sys_call_table and sys_ni_syscall are correct in catnap_sys_call.c, since they change every time you boot the system. Type 'sudo cat /proc/kallsyms | grep sys_ni_syscall' and 'sudo cat /proc/kallsyms | grep sys_call_table' to get their current value.<br/>
+2 - Make the Makefile.<br/>
+3 - Insert the module into the kernel by typing 'sudo insmod ./catnap_sys_call.ko'. You can also remove it by typing 'sudo rmmod catnap_sys_call'.<br/>
+4 - Compile and execute the tester and see if the module works correctly!<br/>
 
 
 Link to the original paper: https://ieeexplore.ieee.org/document/8978918
