@@ -15,7 +15,7 @@ static int locks[nThreadsMax]; // Each thread has its own lock.
 void *call_system_call(void * p_index) {
     int i = *((int *) p_index);
     printf("Thread id: %d   Invoking the catnap system call!\n", i);
-    syscall(134, &locks[i], hint, wakeup_mode, i); // sys_ni_syscall, which has been replaced by catnap, has index 134.
+    syscall(134, &locks[i], hint-1, wakeup_mode-1, i); // sys_ni_syscall, which has been replaced by catnap, has index 134.
     locks[i+1] = 1; 
     printf("Thread id: %d   Returning from the call!\n", i);
 }
@@ -27,7 +27,7 @@ void *delayed_system_call(void * p_index) {
     
     int i = *((int *) p_index);
     printf("Thread id: %d   Invoking the catnap system call!\n", i);
-    syscall(134, &locks[i], hint, wakeup_mode, i); // sys_ni_syscall, which has been replaced by catnap, has index 134.
+    syscall(134, &locks[i], hint-1, wakeup_mode-1, i); // sys_ni_syscall, which has been replaced by catnap, has index 134.
     locks[i+1] = 1; 
     printf("Thread id: %d  Returning from the call!\n", i);
 }
