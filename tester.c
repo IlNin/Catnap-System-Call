@@ -3,14 +3,15 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <time.h> 
 
-#define nThreadsMax 6
+#define nThreadsMax 4
 
 int input; // The type of test selected by the user.
 int hint; // Attribute that indicates the C-State targetted. Used by mwait.
 int wakeup_mode; // Attribute that indicates if interruptions are able to break mwait, even if masked. Used by mwait.
 
-static int locks[nThreadsMax]; // Each thread has its own lock.
+unsigned long* locks; // Array of locks. Each thread has its own lock.
 
 void *call_system_call(void * p_index) {
     int i = *((int *) p_index);
@@ -29,12 +30,13 @@ void *delayed_system_call(void * p_index) {
     printf("Thread id: %d   Invoking the catnap system call!\n", i);
     syscall(134, &locks[i], hint-1, wakeup_mode-1, i); // sys_ni_syscall, which has been replaced by catnap, has index 134.
     locks[i+1] = 1; 
-    printf("Thread id: %d  Returning from the call!\n", i);
+    printf("Thread id: %d   Returning from the call!\n", i);
 }
 
 void test1(void) {
     // Allocates memory for nThreads threads
     pthread_t *threads = malloc(sizeof(pthread_t)*2);
+    locks = (unsigned long*) malloc(sizeof(unsigned long)*nThreadsMax); 
     
     // Populates the lock array
     locks[0] = 1;
@@ -61,19 +63,46 @@ void test1(void) {
 }
 
 void test2(void) {
-    // Allocates memory for nThreads threads
+    // Allocates memory for nThreads threads and locks
     pthread_t *threads = malloc(sizeof(pthread_t)*nThreadsMax);
+    locks = (unsigned long*) malloc(sizeof(unsigned long)*nThreadsMax);
 	
     // Populates the lock array
     locks[0] = 1;
     for (int i = 1; i < nThreadsMax; i++) {
         locks[i] = 0; 
     }
-
+    
+    // Preparares a random order for the threads
+    printf("Generating a random order for the threads...\n");
+    int order[nThreadsMax];
+    for (int i = 0; i < nThreadsMax; i++) {
+        order[i] = -1; 
+    }
+    int currentIndex = 0;
+    while (1) {
+        srand(time(0));
+        int random = rand() % nThreadsMax;
+        int flag = 1;
+        for (int i = 0; i < currentIndex; i++) {
+            if (random == order[i]) {
+                flag = 0;
+                break;
+            }
+        }
+        if (flag) {
+            order[currentIndex] = random;
+            currentIndex += 1; 
+        }
+        if (currentIndex == nThreadsMax) 
+            break;
+    }
+    printf("Done!\n\n");
+            
     // Starts the threads
     for (int i = 0; i < nThreadsMax; i++) {
         int *p_index = malloc(sizeof(int*));
-        *p_index = i;
+        *p_index = order[i];
         pthread_create(&threads[i], NULL, call_system_call, (void*) p_index);
     }
 
@@ -96,10 +125,10 @@ int main(int argc, char** argv) {
 
     printf("This program is meant to test if the catnap system call is working correctly and its efficacy!\n");
     printf("Choose between these two tests: \n");
-    printf("1 - Two threads make the call: one immediately with lock 0 and the other with lock 1, but only after a delay.\n");
+    printf("1 - Two threads make the call: one immediately with lock 0 and the other with lock 1, but only after a fixed amount of delay.\n");
     printf("    The thread that makes the first call is supposed to stay still in mwait mode until the second thread writes 1 in its lock.\n");
     printf("    This test is useful to see how many times thread 1 wakes up while waiting for thread 2!\n");
-    printf("2 - Six threads make the call: the first with lock 1, the others with lock 0.\n");
+    printf("2 - Four threads make the call in a casual order: the thread with id 0 has lock 1, the others lock 0.\n");
     printf("    The threads are supposed to finish their execution in a precise order, since thread n writes 1 in the lock of thread n+1 (which is\n");
     printf("    waiting in mwait) only when it has returned from the system call.\n");
     printf("    This test is useful to see how many times a thread wakes up while waiting for its previous one in line to finish its execution.\n");
@@ -187,14 +216,14 @@ int main(int argc, char** argv) {
         }
         printf("\n");
         
-        printf("The test is over! You can check what the catnap system calls did by typing 'sudo dmesg -c' on the terminal.\n");
+        printf("The test is over! You can check what the catnap system calls did by typing 'sudo dmesg -c' on the terminal if DEBUG mode is enabled.\n");
     }
     
     else {
         printf("The kernel module catnap_sys_call replaces a system call that does absolutely nothing (sys_ni_syscall), with one that implements\n");
         printf("the catnap back-off algorithm. This waiting policy is supposed to be a middle ground between spinning and sleeping, since threads\n");
         printf("are technically considered to be active by the system, even though in reality they operating within processors that are working\n");
-        printf("in a low profile fashion. This approach is supposed to save up on performance and energy consumption, and it's achieved by using\n");
+        printf("in a low profile/optimized fashion. This approach is supposed to save up on performance and energy consumption, and it's achieved by using\n");
         printf("the MONITOR/MWAIT instructions, which can be executed only at privilge level 0, hence the need for a system call.\n");
         printf("- MONITOR: This instruction monitors an address range that has been given in input. If someone writes in that address range,\n");
         printf("           MONITOR is notified and wakes up any thread that is waiting with MWAIT, an instruction whose MONITOR is paired with.\n");
