@@ -54,7 +54,6 @@ __SYSCALL_DEFINEx(4, _catnap_backoff, unsigned long*, lock, unsigned long, hint,
     
     if (ENABLE_DEBUG_MODE) {
         printk(KERN_ALERT "Thread id: %d    Lock value: %lu\n", thread_id, *lock);
-        printk(KERN_ALERT "Thread id: %d    Lock address: %px\n", thread_id, lock);
         printk(KERN_ALERT "Thread id: %d    Entering catnap loop!\n", thread_id);
         printk(KERN_ALERT "Thread id: %d    C-State Targetted: %s   Interrupts as breaks: %s\n", thread_id, hintMSG[hint], wakeupMSG[wakeup_mode]);
     }
@@ -72,6 +71,7 @@ __SYSCALL_DEFINEx(4, _catnap_backoff, unsigned long*, lock, unsigned long, hint,
             if (ENABLE_DEBUG_MODE) 
                 printk(KERN_ALERT "Thread id: %d    Entering in mwait state!\n", thread_id);
             __mwait(HINT, WAKEUP_MODE); 
+            printk(KERN_ALERT); // For some reason *lock will never gets its current value without printk-ing something.
             if (ENABLE_DEBUG_MODE) 
                 printk(KERN_ALERT "Thread id: %d    Exiting mwait state!\n", thread_id);
         }
@@ -83,13 +83,12 @@ __SYSCALL_DEFINEx(4, _catnap_backoff, unsigned long*, lock, unsigned long, hint,
         }
         
         // DEBUG
-        else { // We count how many times a node has woken up for reasons unrelated to a change in the lock.
-            if (ENABLE_DEBUG_MODE)
-                printk(KERN_ALERT "Thread id: %d    Looks like I woke up needlessly for the %d time!", thread_id, loop_number);
+        else if (ENABLE_DEBUG_MODE) { // We count how many times a node has woken up for reasons unrelated to a change in the lock.
+            printk(KERN_ALERT "Thread id: %d    Looks like I woke up needlessly for the %d time!", thread_id, loop_number);
             loop_number += 1;
         }
         
-        if (loop_number >= 100) { // If the count is too high, the wait is stopped in order to avoid long (or even infinite) loops.
+        if (ENABLE_DEBUG_MODE && loop_number >= 100) { // If the count is too high, the wait is stopped in order to avoid long (or even infinite) loops.
             printk(KERN_ALERT "Thread id: %d    I have to break the loop or else I'll cycle in eternity since the lock is still %lu!", thread_id, *lock);
             break;
         }
