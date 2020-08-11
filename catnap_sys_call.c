@@ -15,12 +15,13 @@ MODULE_AUTHOR("Luca");
 #define ALLOW_INTERRUPTS_AS_BREAKS 0x1
 
 #define ENABLE_DEBUG_MODE 0
+#define MAX_LOOPS 100
 
 char *hintMSG[4] = {"C1", "C2", "C3", "C4"}; // Strings that are printed during the printk.
 char *wakeupMSG[2] = {"Disabled", "Enabled"}; // Same as above.
 
-unsigned long sys_call_table_address = 0xffffffff8d2002a0;  // The addess of the system call table. THIS ADDRESS CHANGES AT EACH BOOT OF THE OS: USE 'sudo cat /proc/kallsyms | grep sys_call_table'
-unsigned long sys_ni_syscall_address = 0xffffffff8c2c1e60; // The address of sys_ni_syscall (x64). THIS ADDRESS CHANGES AT EACH BOOT OF THE OS: USE 'sudo cat /proc/kallsyms | grep sys_ni_syscall'
+unsigned long sys_call_table_address = 0xffffffff85e002a0;  // The addess of the system call table. THIS ADDRESS CHANGES AT EACH BOOT OF THE OS: USE 'sudo cat /proc/kallsyms | grep sys_call_table'
+unsigned long sys_ni_syscall_address = 0xffffffff84ec1e60; // The address of sys_ni_syscall (x64). THIS ADDRESS CHANGES AT EACH BOOT OF THE OS: USE 'sudo cat /proc/kallsyms | grep sys_ni_syscall'
 int sys_ni_syscall_index = 0; // Index of sys_ni_syscall inside the table.
 
 // The system call we'll replace sys_ni_syscall with. 
@@ -88,7 +89,7 @@ __SYSCALL_DEFINEx(4, _catnap_backoff, unsigned long*, lock, unsigned long, hint,
             loop_number += 1;
         }
         
-        if (ENABLE_DEBUG_MODE && loop_number >= 100) { // If the count is too high, the wait is stopped in order to avoid long (or even infinite) loops.
+        if (ENABLE_DEBUG_MODE && loop_number >= MAX_LOOPS) { // If the count is too high, the wait is stopped in order to avoid long (or even infinite) loops.
             printk(KERN_ALERT "Thread id: %d    I have to break the loop or else I'll cycle in eternity since the lock is still %lu!", thread_id, *lock);
             break;
         }
