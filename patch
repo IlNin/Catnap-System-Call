@@ -1,0 +1,99 @@
+diff --git a/Makefile.config b/Makefile.config
+index fb4c970..9908471 100644
+--- a/Makefile.config
++++ b/Makefile.config
+@@ -31,4 +31,8 @@ cbomcs_spin_then_park 		 \
+ cptltkt_original 			 \
+ ctkttkt_original 			 \
+ partitioned_original         \
+-mutexee_original
++mutexee_original             \
++mcs_catnap_c1              \
++mcs_catnap_c2              \
++mcs_catnap_c3              \
++mcs_catnap_c4
+diff --git a/src/Makefile b/src/Makefile
+index 4ab46cb..afaf39f 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -1,6 +1,6 @@
+ include ../Makefile.config
+ 
+-LDFLAGS=-L../obj/CLHT/external/lib -L../obj/CLHT -Wl,--whole-archive -Wl,--version-script=interpose.map -lsspfd -lssmem -lclht -Wl,--no-whole-archive  -lrt -lm -ldl -lpapi -m64 -pthread
++LDFLAGS=-L../obj/CLHT/external/lib -L../obj/CLHT -Wl,--whole-archive -Wl,--version-script=interpose.map -lsspfd -lssmem -lclht -Wl,--no-whole-archive  -lrt -lm -ldl -m64 -pthread
+ CFLAGS=-I../include/ -I../obj/CLHT/include/ -I../obj/CLHT/external/include/ -fPIC -Wall -Werror -O3 -g
+ 
+ # Keep objects files
+diff --git a/src/malthusian.c b/src/malthusian.c
+index 35fb143..074658e 100644
+--- a/src/malthusian.c
++++ b/src/malthusian.c
+@@ -43,7 +43,7 @@
+ #include <pthread.h>
+ #include <assert.h>
+ #include <unistd.h>
+-#include <papi.h>
++#include "papi.h"
+ #include <malthusian.h>
+ 
+ #include "waiting_policy.h"
+diff --git a/src/mcstp.c b/src/mcstp.c
+index 7d4fbbf..31a6b77 100644
+--- a/src/mcstp.c
++++ b/src/mcstp.c
+@@ -49,7 +49,7 @@
+  * another thread and will restart a complete lock acquisition procedure.
+  */
+ #define _GNU_SOURCE
+-#include <papi.h>
++#include "papi.h"
+ #include <stdlib.h>
+ #include <stdint.h>
+ #include <string.h>
+diff --git a/src/waiting_policy.h b/src/waiting_policy.h
+index 784dd89..2c198b5 100644
+--- a/src/waiting_policy.h
++++ b/src/waiting_policy.h
+@@ -77,6 +77,42 @@ static inline void waiting_policy_sleep(volatile int *var) {
+         CPU_PAUSE();
+ }
+ 
++static inline void waiting_policy_wake(volatile int *var) {
++    *var = UNLOCKED;
++}
++#elif defined(WAITING_CATNAP_C1)
++#define WAITING_POLICY "WAITING_CATNAP_C1"
++static inline void waiting_policy_sleep(volatile int *var) {
++    syscall(134, var, 0, 0, 0);
++}
++
++static inline void waiting_policy_wake(volatile int *var) {
++    *var = UNLOCKED;
++}
++#elif defined(WAITING_CATNAP_C2)
++#define WAITING_POLICY "WAITING_CATNAP_C2"
++static inline void waiting_policy_sleep(volatile int *var) {
++    syscall(134, var, 1, 0, 0);
++}
++
++static inline void waiting_policy_wake(volatile int *var) {
++    *var = UNLOCKED;
++}
++#elif defined(WAITING_CATNAP_C3)
++#define WAITING_POLICY "WAITING_CATNAP_C3"
++static inline void waiting_policy_sleep(volatile int *var) {
++    syscall(134, var, 2, 0, 0);
++}
++
++static inline void waiting_policy_wake(volatile int *var) {
++    *var = UNLOCKED;
++}
++#elif defined(WAITING_CATNAP_C4)
++#define WAITING_POLICY "WAITING_CATNAP_C4"
++static inline void waiting_policy_sleep(volatile int *var) {
++    syscall(134, var, 3, 0, 0);
++}
++
+ static inline void waiting_policy_wake(volatile int *var) {
+     *var = UNLOCKED;
+ }
