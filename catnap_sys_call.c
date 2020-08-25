@@ -25,7 +25,7 @@ unsigned long sys_ni_syscall_address = 0xffffffff84ec1e60; // The address of sys
 int sys_ni_syscall_index = 0; // Index of sys_ni_syscall inside the table.
 
 // The system call we'll replace sys_ni_syscall with. 
-__SYSCALL_DEFINEx(4, _catnap_backoff, unsigned long*, lock, unsigned long, hint, unsigned long, wakeup_mode, int, thread_id) {
+__SYSCALL_DEFINEx(4, _catnap_backoff, unsigned long * volatile, lock, unsigned long, hint, unsigned long, wakeup_mode, int, thread_id) {
     // Initialize parameters for MWAIT.
     unsigned long HINT;
     unsigned long WAKEUP_MODE;
@@ -71,8 +71,7 @@ __SYSCALL_DEFINEx(4, _catnap_backoff, unsigned long*, lock, unsigned long, hint,
         else { // Else it goes in the mwait phase until it is woken up.
             if (ENABLE_DEBUG_MODE) 
                 printk(KERN_ALERT "Thread id: %d    Entering in mwait state!\n", thread_id);
-            __mwait(HINT, WAKEUP_MODE); 
-            printk(KERN_ALERT); // For some reason *lock will never gets its current value without printk-ing something.
+            __mwait(HINT, WAKEUP_MODE);
             if (ENABLE_DEBUG_MODE) 
                 printk(KERN_ALERT "Thread id: %d    Exiting mwait state!\n", thread_id);
         }
