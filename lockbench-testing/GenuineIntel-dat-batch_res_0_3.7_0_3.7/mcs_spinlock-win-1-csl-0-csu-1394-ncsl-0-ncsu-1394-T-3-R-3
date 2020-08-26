@@ -1,0 +1,5 @@
+Using LibMCS with waiting WAITING_SPINLOCK
+Testing  PTHREAD_MUTEX_LOCK with 3 threads
+ ---- Throughput: 410122.37500 CS/sec. CS time 2.43830
+29.99 0.00
+29.99 0.00 144966853
