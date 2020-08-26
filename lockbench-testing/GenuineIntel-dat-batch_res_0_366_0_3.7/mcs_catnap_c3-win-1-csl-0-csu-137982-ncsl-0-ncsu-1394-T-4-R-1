@@ -1,0 +1,5 @@
+Using LibMCS with waiting WAITING_CATNAP_C3
+Testing  PTHREAD_MUTEX_LOCK with 4 threads
+ ---- Throughput: 1829.32092 CS/sec. CS time 546.65094
+8.99 28.89
+8.99 28.89 42838147
