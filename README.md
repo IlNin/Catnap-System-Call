@@ -17,7 +17,7 @@ Lockbench:https://github.com/HPDCS/lockbench
 
 
 <b>Install Instructions:</b><br/>
-1 - Check if your machine supports MONITOR/MWAIT by using the command 'cpuid' on your command line. If you don't have it installed, use 'sudo apt-get install cpuid'.
+1 - Check if your machine supports MONITOR/MWAIT by using the command 'cpuid' on your command line. If you don't have it installed, use 'sudo apt-get install cpuid'.<br/>
 2 - Make sure that the addresses for the sys_call_table and sys_ni_syscall are correct in catnap_sys_call.c, since they change every time you boot the system. Type 'sudo cat /proc/kallsyms | grep sys_ni_syscall' and 'sudo cat /proc/kallsyms | grep sys_call_table' to get their current value.<br/>
 3 - Make the Makefile.<br/>
 4 - Insert the module into the kernel by typing 'sudo insmod ./catnap_sys_call.ko'. You can also remove it by typing 'sudo rmmod catnap_sys_call'.<br/>
