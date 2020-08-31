@@ -10,12 +10,15 @@ This approach is supposed to save up on performance and energy consumption, and 
 - MWAIT: If paired with MONITOR, any thread that encounters this instruction will stop until the address range observed by MONITOR is written by someone or until an external factor breaks the wait, such as debug/machine check interruptions and signals like INIT and RESET. MWAIT accepts two inputs: a hint, which specifies in which C-state the processor should go in during the wait, and a wakeup_mode, which specifies if interruptions, even the masked ones, should interrupt the wait.
 
 
-<b>Comments:</b><br/>
-Work-in-progress.
+<b>Testing:</b><br/>
+Once finished working on the module, I added four new policies that are based on different variants of Catpan to Litl, which is a tool that allows executing a program based on Pthread mutex locks with other locking algorithms. Then I used a program which was kindly provided by my professor, Lockbench, to simulate programs that are automatically executed through Litl in order to gain some stats about the efficacy of Catnap when used by MCS. You can find the results in my report published in this repository.
+Litl: https://github.com/multicore-locks/litl
+Lockbench:https://github.com/HPDCS/lockbench
 
 
 <b>Install Instructions:</b><br/>
-1 - Make sure that the addresses for the sys_call_table and sys_ni_syscall are correct in catnap_sys_call.c, since they change every time you boot the system. Type 'sudo cat /proc/kallsyms | grep sys_ni_syscall' and 'sudo cat /proc/kallsyms | grep sys_call_table' to get their current value.<br/>
-2 - Make the Makefile.<br/>
-3 - Insert the module into the kernel by typing 'sudo insmod ./catnap_sys_call.ko'. You can also remove it by typing 'sudo rmmod catnap_sys_call'.<br/>
-4 - Compile and execute the tester and see if the module works correctly!<br/>
+1 - Check if your machine supports MONITOR/MWAIT by using the command 'cpuid' on your command line. If you don't have it installed, use 'sudo apt-get install cpuid'.
+2 - Make sure that the addresses for the sys_call_table and sys_ni_syscall are correct in catnap_sys_call.c, since they change every time you boot the system. Type 'sudo cat /proc/kallsyms | grep sys_ni_syscall' and 'sudo cat /proc/kallsyms | grep sys_call_table' to get their current value.<br/>
+3 - Make the Makefile.<br/>
+4 - Insert the module into the kernel by typing 'sudo insmod ./catnap_sys_call.ko'. You can also remove it by typing 'sudo rmmod catnap_sys_call'.<br/>
+5 - Compile and execute the tester and see if the module works correctly! In order to see the results after each test, make sure you have enabled the 'Debug Mode' in the module.<br/>
