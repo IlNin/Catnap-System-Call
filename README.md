@@ -11,8 +11,8 @@ This approach is supposed to save up on performance and energy consumption, and 
 
 
 <b>Testing:</b><br/>
-Once finished working on the module, I added four new policies that are based on different variants of Catnap to Litl, which is a tool that allows executing a program based on Pthread mutex locks with other locking algorithms. Then I used a program which was kindly provided by my professor, Lockbench, to simulate programs that are automatically executed through Litl in order to gain some stats about the efficacy of Catnap when used by MCS. You can find the results in my report published in this repository.
-Litl: https://github.com/multicore-locks/litl
+Once finished working on the module, I added four new policies that are based on different variants of Catnap to Litl, which is a tool that allows executing a program based on Pthread mutex locks with other locking algorithms. Then I used a program which was kindly provided by my professor, Lockbench, to simulate programs that are automatically executed through Litl in order to gain some stats about the efficacy of Catnap when used by MCS. You can find the results in my report published in this repository.<br/>
+Litl: https://github.com/multicore-locks/litl<br/>
 Lockbench:https://github.com/HPDCS/lockbench
 
 
