@@ -16,6 +16,11 @@ Litl: https://github.com/multicore-locks/litl<br/>
 Lockbench:https://github.com/HPDCS/lockbench
 
 
+<b>Comments:</b><br/>
+This was a small and yet time consuming project, because there were a lot of concepts that I had to learn before writing a single line of code. Kernel modules, system call tables, locking algorithms and policies, the C-States, the MONITOR/MWAIT instructions themselves: before working on this project, my knowledge in all these topics was minimal at best and non-existent at worst. Thankfully my professor was always at my side, telling me where to focus and suggesting me various approaches, without explicitally forcing me on a single and particular solution, meaning that I had a lot of freedom, and for that I thank him.<br/>
+At the end everything worked out, because from the tests Catnap performed exactly as the paper suggested, both in the good and in the bad.
+
+
 <b>Install Instructions:</b><br/>
 1 - Check if your machine supports MONITOR/MWAIT by using the command 'cpuid' on your command line. If you don't have it installed, use 'sudo apt-get install cpuid'.<br/>
 2 - Make sure that the addresses for the sys_call_table and sys_ni_syscall are correct in catnap_sys_call.c, since they change every time you boot the system. Type 'sudo cat /proc/kallsyms | grep sys_ni_syscall' and 'sudo cat /proc/kallsyms | grep sys_call_table' to get their current value.<br/>
